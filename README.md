@@ -4,8 +4,9 @@ A Windows desktop app (WinUI 3 / .NET) for tidying up photos on disk: find photo
 multiple source folders, remove exact duplicates, and file everything into a single organized
 archive — without ever deleting anything on its own.
 
-> Status: early stage. This repository currently contains only the UI prototype under
-> [`Layout/`](Layout/). The WinUI 3 application (`PhotoOrganizer`) has not been scaffolded yet.
+> Status: early stage. The WinUI 3 application (`PhotoOrganizer`) is scaffolded — it builds and
+> launches into an onboarding shell, but the scan / dedup / organize features are not implemented
+> yet. An interactive UI prototype of the full design lives under [`Layout/`](Layout/).
 
 ## What it does
 
@@ -40,9 +41,24 @@ directly in any modern browser (it self-unpacks; no server needed).
 
 ## Tech stack
 
-- .NET 10, WinUI 3 (Windows App SDK), packaged desktop app.
+- .NET 10, WinUI 3 (Windows App SDK 2.2.0), packaged desktop app.
 - MVVM via CommunityToolkit.Mvvm, dependency injection via Microsoft.Extensions.DependencyInjection.
-- SQLite (`Microsoft.Data.Sqlite`) for the persistent index.
+- SQLite (`Microsoft.Data.Sqlite`) for the persistent index (planned).
+
+## Build and run
+
+Requires Windows with the .NET 10 SDK and the Windows App SDK workload. There is no `AnyCPU`
+configuration — every command must pass an explicit platform (`x86`, `x64`, or `ARM64`).
+
+```powershell
+# Build
+dotnet build "PhotoOrganizer/PhotoOrganizer.slnx" -p:Platform=x64
+
+# Run
+dotnet run --project "PhotoOrganizer/PhotoOrganizer/PhotoOrganizer.csproj" -p:Platform=x64
+```
+
+Or open `PhotoOrganizer/PhotoOrganizer.slnx` in Visual Studio 2022+ and press F5.
 
 ## Conventions
 
