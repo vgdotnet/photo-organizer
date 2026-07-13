@@ -1,5 +1,6 @@
 using Microsoft.UI.Xaml;
 using Microsoft.Extensions.DependencyInjection;
+using PhotoOrganizer.Services;
 using PhotoOrganizer.ViewModels;
 using System;
 
@@ -18,6 +19,8 @@ namespace PhotoOrganizer {
 
         private static IServiceProvider ConfigureServices() {
             var services = new ServiceCollection();
+
+            services.AddSingleton<IFileSystemService, FileSystemService>();
 
             services.AddTransient<MainViewModel>();
 
