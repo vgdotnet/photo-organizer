@@ -17,7 +17,7 @@ namespace PhotoOrganizer {
             AppWindow.Resize(new Windows.Graphics.SizeInt32(1280, 860));
         }
 
-        private async void DestinationTree_Expanding(TreeView sender, TreeViewExpandingEventArgs args) {
+        private async void Tree_Expanding(TreeView sender, TreeViewExpandingEventArgs args) {
             if (args.Item is FolderNode node) {
                 await ViewModel.LoadChildrenAsync(node);
             }
