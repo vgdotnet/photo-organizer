@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Microsoft.Extensions.Logging;
 using PhotoOrganizer.Models;
 
 namespace PhotoOrganizer.Services;
@@ -9,6 +10,12 @@ public sealed class FileSystemService : IFileSystemService {
     private static readonly HashSet<string> PhotoExtensions = new(StringComparer.OrdinalIgnoreCase) {
         ".jpg", ".jpeg", ".jpe", ".png", ".heic", ".heif", ".tif", ".tiff", ".webp", ".cr2", ".nef", ".arw",
     };
+
+    private readonly ILogger<FileSystemService> _logger;
+
+    public FileSystemService(ILogger<FileSystemService> logger) {
+        _logger = logger;
+    }
 
     public IReadOnlyList<FolderItem> GetDrives() {
         var drives = new List<FolderItem>();
@@ -38,7 +45,8 @@ public sealed class FileSystemService : IFileSystemService {
         try {
             directories = Directory.EnumerateDirectories(path);
         }
-        catch (Exception) {
+        catch (Exception exception) {
+            _logger.LogWarning(exception, "Cannot list folders in {Path}", path);
             return result;
         }
 
@@ -56,7 +64,8 @@ public sealed class FileSystemService : IFileSystemService {
                     IsDrive = false,
                 });
             }
-            catch (Exception) {
+            catch (Exception exception) {
+                _logger.LogDebug(exception, "Skipped folder {Path}", directory);
             }
         }
 
@@ -72,7 +81,8 @@ public sealed class FileSystemService : IFileSystemService {
         try {
             files = Directory.EnumerateFiles(path);
         }
-        catch (Exception) {
+        catch (Exception exception) {
+            _logger.LogWarning(exception, "Cannot list files in {Path}", path);
             return result;
         }
 
@@ -95,7 +105,8 @@ public sealed class FileSystemService : IFileSystemService {
                     Modified = info.LastWriteTime,
                 });
             }
-            catch (Exception) {
+            catch (Exception exception) {
+                _logger.LogDebug(exception, "Skipped file {Path}", file);
             }
         }
 

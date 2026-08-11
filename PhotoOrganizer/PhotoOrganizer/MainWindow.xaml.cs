@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -8,10 +9,13 @@ using PhotoOrganizer.ViewModels;
 
 namespace PhotoOrganizer {
     public sealed partial class MainWindow : Window {
+        private readonly ILogger<MainWindow> _logger;
+
         public MainViewModel ViewModel { get; }
 
         public MainWindow() {
             InitializeComponent();
+            _logger = App.GetService<ILogger<MainWindow>>();
             ViewModel = App.GetService<MainViewModel>();
             RootGrid.DataContext = ViewModel;
             Title = ViewModel.Title;
@@ -20,8 +24,13 @@ namespace PhotoOrganizer {
         }
 
         private async void Tree_Expanding(TreeView sender, TreeViewExpandingEventArgs args) {
-            if (args.Item is FolderNode node) {
-                await ViewModel.LoadChildrenAsync(node);
+            try {
+                if (args.Item is FolderNode node) {
+                    await ViewModel.LoadChildrenAsync(node);
+                }
+            }
+            catch (Exception exception) {
+                _logger.LogError(exception, "Cannot load the children of the expanded node");
             }
         }
 
@@ -32,32 +41,54 @@ namespace PhotoOrganizer {
         }
 
         private async void SourcesTree_ItemInvoked(TreeView sender, TreeViewItemInvokedEventArgs args) {
-            if (args.InvokedItem is FolderNode node) {
-                await ViewModel.ShowFolderAsync(node);
+            try {
+                if (args.InvokedItem is FolderNode node) {
+                    await ViewModel.ShowFolderAsync(node);
+                }
+            }
+            catch (Exception exception) {
+                _logger.LogError(exception, "Cannot show the folder invoked in the sources tree");
             }
         }
 
         private async void Tile_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e) {
-            if (sender is FrameworkElement element && element.DataContext is ContentTile tile) {
-                await ViewModel.OpenAsync(tile);
-                BringSelectedSourceIntoView();
+            try {
+                if (sender is FrameworkElement element && element.DataContext is ContentTile tile) {
+                    await ViewModel.OpenAsync(tile);
+                    BringSelectedSourceIntoView();
+                }
+            }
+            catch (Exception exception) {
+                _logger.LogError(exception, "Cannot open the double-tapped tile");
             }
         }
 
         private async void Breadcrumbs_ItemClicked(BreadcrumbBar sender, BreadcrumbBarItemClickedEventArgs args) {
-            if (args.Item is PathSegment segment) {
-                await ViewModel.NavigateAsync(segment);
-                BringSelectedSourceIntoView();
+            try {
+                if (args.Item is PathSegment segment) {
+                    await ViewModel.NavigateAsync(segment);
+                    BringSelectedSourceIntoView();
+                }
+            }
+            catch (Exception exception) {
+                _logger.LogError(exception, "Cannot navigate to the clicked breadcrumb");
             }
         }
 
         private async void BringSelectedSourceIntoView() {
-            for (var attempt = 0; attempt < 20; attempt++) {
-                if (TryBringSelectedSourceIntoView()) {
-                    return;
+            try {
+                for (var attempt = 0; attempt < 20; attempt++) {
+                    if (TryBringSelectedSourceIntoView()) {
+                        return;
+                    }
+
+                    await Task.Delay(50);
                 }
 
-                await Task.Delay(50);
+                _logger.LogDebug("The selected node has no container yet, scrolling skipped");
+            }
+            catch (Exception exception) {
+                _logger.LogError(exception, "Cannot scroll the sources tree to the selected node");
             }
         }
 
@@ -95,8 +126,13 @@ namespace PhotoOrganizer {
         }
 
         private async void LoadTileThumbnail(ListViewBase sender, ContainerContentChangingEventArgs args) {
-            if (args.Item is PhotoTile tile) {
-                await tile.LoadThumbnailAsync();
+            try {
+                if (args.Item is PhotoTile tile) {
+                    await tile.LoadThumbnailAsync();
+                }
+            }
+            catch (Exception exception) {
+                _logger.LogError(exception, "Cannot load a tile thumbnail");
             }
         }
     }

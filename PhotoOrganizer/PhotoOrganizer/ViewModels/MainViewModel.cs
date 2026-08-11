@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
+using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml.Controls;
 using PhotoOrganizer.Services;
 
@@ -18,11 +19,14 @@ public partial class MainViewModel : ObservableObject {
 
     private readonly IShellService _shell;
 
+    private readonly ILogger<MainViewModel> _logger;
+
     private int _folderToken;
 
-    public MainViewModel(IFileSystemService fileSystem, IShellService shell) {
+    public MainViewModel(IFileSystemService fileSystem, IShellService shell, ILogger<MainViewModel> logger) {
         _fileSystem = fileSystem;
         _shell = shell;
+        _logger = logger;
         Title = "Photo Organizer";
         ShowNoFolder = true;
         ItemsSummary = string.Empty;
@@ -172,13 +176,16 @@ public partial class MainViewModel : ObservableObject {
         }
 
         foreach (var photo in content.Photos) {
-            Items.Add(new PhotoTile(photo));
+            Items.Add(new PhotoTile(photo, _logger));
         }
 
         IsLoadingItems = false;
         ItemsSummary = BuildSummary(content.Folders.Count, content.Photos.Count);
         EmptyMessage = EmptyFolderMessage;
         ShowEmpty = Items.Count == 0;
+
+        _logger.LogDebug("Opened {Path}: {Folders} folders, {Photos} photos",
+            path, content.Folders.Count, content.Photos.Count);
     }
 
     public async Task LoadChildrenAsync(FolderNode node) {

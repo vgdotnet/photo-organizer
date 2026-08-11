@@ -2,6 +2,7 @@ using System;
 using System.Globalization;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
+using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml.Media.Imaging;
 using PhotoOrganizer.Models;
 using Windows.Storage;
@@ -14,9 +15,12 @@ public sealed partial class PhotoTile : ContentTile {
 
     private static readonly string[] SizeUnits = { "B", "KB", "MB", "GB", "TB" };
 
+    private readonly ILogger _logger;
+
     private bool _thumbnailRequested;
 
-    public PhotoTile(PhotoFile file) : base(file.Name, file.Path) {
+    public PhotoTile(PhotoFile file, ILogger logger) : base(file.Name, file.Path) {
+        _logger = logger;
         Meta = $"{FormatSize(file.Size)} · {file.Modified.LocalDateTime.ToString("MMM d, yyyy", CultureInfo.InvariantCulture)}";
     }
 
@@ -44,7 +48,8 @@ public sealed partial class PhotoTile : ContentTile {
             await image.SetSourceAsync(thumbnail);
             Thumbnail = image;
         }
-        catch (Exception) {
+        catch (Exception exception) {
+            _logger.LogWarning(exception, "Cannot load a thumbnail for {Path}", Path);
         }
     }
 
