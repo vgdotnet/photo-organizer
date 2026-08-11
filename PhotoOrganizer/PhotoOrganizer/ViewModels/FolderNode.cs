@@ -32,6 +32,9 @@ public partial class FolderNode : ObservableObject {
     public partial bool HasUnrealizedChildren { get; set; }
 
     [ObservableProperty]
+    public partial bool IsExpanded { get; set; }
+
+    [ObservableProperty]
     public partial bool IsChecked { get; set; }
 
     partial void OnIsCheckedChanged(bool value) {

@@ -6,6 +6,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:ctk="using:CommunityToolkit.WinUI.Controls"
+    xmlns:conv="using:CommunityToolkit.WinUI.Converters"
     xmlns:controls="using:PhotoOrganizer.Controls"
     xmlns:vm="using:PhotoOrganizer.ViewModels"
     mc:Ignorable="d">
@@ -57,6 +58,54 @@
                 <GradientStop Offset="0" Color="#B08F9A" />
                 <GradientStop Offset="1" Color="#DCC4CC" />
             </LinearGradientBrush>
+
+            <conv:BoolToVisibilityConverter x:Key="BoolToVisibility" />
+
+            <DataTemplate x:Key="FolderTileTemplate" x:DataType="vm:FolderTile">
+                <Border Width="166" Height="180" CornerRadius="6" Background="{StaticResource Card}"
+                        BorderThickness="1" BorderBrush="{StaticResource Stroke}"
+                        ToolTipService.ToolTip="{x:Bind Path}"
+                        DoubleTapped="Tile_DoubleTapped">
+                    <StackPanel>
+                        <Grid Height="100" Background="{StaticResource Hover}">
+                            <FontIcon Glyph="&#xE8B7;" FontFamily="Segoe Fluent Icons" FontSize="40"
+                                      Foreground="{StaticResource Folder}" />
+                        </Grid>
+                        <StackPanel Padding="10,8,10,10" Spacing="4">
+                            <TextBlock Text="{x:Bind Name}" FontSize="12" TextTrimming="CharacterEllipsis"
+                                       Foreground="{StaticResource TextPrimary}" />
+                            <TextBlock Text="Folder" FontSize="11"
+                                       Foreground="{StaticResource TextTertiary}" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </DataTemplate>
+
+            <DataTemplate x:Key="PhotoTileTemplate" x:DataType="vm:PhotoTile">
+                <Border Width="166" Height="180" CornerRadius="6" Background="{StaticResource Card}"
+                        BorderThickness="1" BorderBrush="{StaticResource Stroke}"
+                        ToolTipService.ToolTip="{x:Bind Path}"
+                        DoubleTapped="Tile_DoubleTapped">
+                    <StackPanel>
+                        <Grid Height="100" Background="{StaticResource ThumbA}">
+                            <Grid.Clip>
+                                <RectangleGeometry Rect="0,0,166,100" />
+                            </Grid.Clip>
+                            <Image Source="{x:Bind Thumbnail, Mode=OneWay}" Stretch="UniformToFill" />
+                        </Grid>
+                        <StackPanel Padding="10,8,10,10" Spacing="4">
+                            <TextBlock Text="{x:Bind Name}" FontSize="12" TextTrimming="CharacterEllipsis"
+                                       Foreground="{StaticResource TextPrimary}" />
+                            <TextBlock Text="{x:Bind Meta}" FontSize="11"
+                                       Foreground="{StaticResource TextTertiary}" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </DataTemplate>
+
+            <controls:TileTemplateSelector x:Key="TileTemplateSelector"
+                                           FolderTemplate="{StaticResource FolderTileTemplate}"
+                                           PhotoTemplate="{StaticResource PhotoTileTemplate}" />
 
             <x:String x:Key="GlyphDown">&#xE70D;</x:String>
             <x:String x:Key="GlyphRight">&#xE76C;</x:String>
@@ -183,13 +232,16 @@
                         <TextBlock Text="{x:Bind ViewModel.SourcesHint, Mode=OneWay}" FontSize="11"
                                    Foreground="{StaticResource TextTertiary}" VerticalAlignment="Bottom" />
                     </StackPanel>
-                    <TreeView Grid.Row="1" Padding="4,0,4,8"
+                    <TreeView x:Name="SourcesTree" Grid.Row="1" Padding="4,0,4,8"
                               ItemsSource="{x:Bind ViewModel.SourcesTree, Mode=OneWay}"
-                              SelectionMode="None"
-                              Expanding="Tree_Expanding">
+                              SelectionMode="Single"
+                              SelectedItem="{x:Bind ViewModel.SelectedSourceItem, Mode=TwoWay}"
+                              Expanding="Tree_Expanding"
+                              ItemInvoked="SourcesTree_ItemInvoked">
                         <TreeView.ItemTemplate>
                             <DataTemplate x:DataType="vm:FolderNode">
                                 <TreeViewItem ItemsSource="{x:Bind Children}"
+                                              IsExpanded="{x:Bind IsExpanded, Mode=TwoWay}"
                                               HasUnrealizedChildren="{x:Bind HasUnrealizedChildren, Mode=OneWay}">
                                     <StackPanel Orientation="Horizontal" Spacing="6">
                                         <CheckBox IsChecked="{Binding IsChecked, Mode=TwoWay}" MinWidth="0" Margin="0" />
@@ -217,192 +269,50 @@
                 <Border Grid.Row="0" Height="42" Padding="16,0"
                         BorderThickness="0,0,0,1" BorderBrush="{StaticResource Stroke}">
                     <Grid>
-                        <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
-                            <TextBlock Text="External (E:) › Camera Uploads › " FontSize="13"
-                                       Foreground="{StaticResource TextSecondary}" />
-                            <TextBlock Text="2023" FontSize="13" FontWeight="SemiBold"
-                                       Foreground="{StaticResource TextPrimary}" />
-                        </StackPanel>
-                        <TextBlock Text="24 items" FontSize="12" HorizontalAlignment="Right"
+                        <BreadcrumbBar VerticalAlignment="Center" Margin="0,0,90,0" FontSize="13"
+                                       ItemsSource="{x:Bind ViewModel.Breadcrumbs, Mode=OneWay}"
+                                       ItemClicked="Breadcrumbs_ItemClicked">
+                            <BreadcrumbBar.ItemTemplate>
+                                <DataTemplate x:DataType="vm:PathSegment">
+                                    <TextBlock Text="{x:Bind Name}" FontSize="13" />
+                                </DataTemplate>
+                            </BreadcrumbBar.ItemTemplate>
+                        </BreadcrumbBar>
+
+                        <TextBlock Text="No folder selected" FontSize="13" FontWeight="SemiBold"
+                                   VerticalAlignment="Center" Foreground="{StaticResource TextPrimary}"
+                                   Visibility="{Binding ShowNoFolder, Converter={StaticResource BoolToVisibility}}" />
+                        <TextBlock Text="{x:Bind ViewModel.ItemsSummary, Mode=OneWay}" FontSize="12"
+                                   HorizontalAlignment="Right"
                                    VerticalAlignment="Center" Foreground="{StaticResource TextTertiary}" />
                     </Grid>
                 </Border>
 
-                <GridView Grid.Row="1" Padding="16,14"
-                          SelectionMode="None" IsItemClickEnabled="False"
-                          ItemContainerStyle="{StaticResource TileItemStyle}"
-                          ScrollViewer.HorizontalScrollMode="Disabled"
-                          ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                <Grid Grid.Row="1">
+                    <GridView Padding="16,14"
+                              ItemsSource="{x:Bind ViewModel.Items, Mode=OneWay}"
+                              SelectionMode="None" IsItemClickEnabled="False"
+                              ItemContainerStyle="{StaticResource TileItemStyle}"
+                              ItemTemplateSelector="{StaticResource TileTemplateSelector}"
+                              ContainerContentChanging="Tiles_ContainerContentChanging"
+                              ScrollViewer.HorizontalScrollMode="Disabled"
+                              ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                         <GridView.ItemsPanel>
                             <ItemsPanelTemplate>
                                 <ItemsWrapGrid Orientation="Horizontal" ItemWidth="178" ItemHeight="192" />
                             </ItemsPanelTemplate>
                         </GridView.ItemsPanel>
-                        <Border Width="166" Height="180" CornerRadius="6" Background="{StaticResource Card}"
-                                BorderThickness="1" BorderBrush="{StaticResource Stroke}">
-                            <StackPanel>
-                                <Rectangle Height="100" Fill="{StaticResource ThumbA}" />
-                                <StackPanel Padding="10,8,10,10" Spacing="4">
-                                    <TextBlock Text="IMG_2034.jpg" FontSize="12" TextTrimming="CharacterEllipsis"
-                                               Foreground="{StaticResource TextPrimary}" />
-                                    <TextBlock Text="4.2 MB · Jul 15, 2023" FontSize="11"
-                                               Foreground="{StaticResource TextTertiary}" />
-                                    <Border Background="{StaticResource KeepBg}" CornerRadius="3"
-                                            Padding="7,2" HorizontalAlignment="Left">
-                                        <TextBlock Text="Keep" FontSize="10" FontWeight="SemiBold"
-                                                   Foreground="{StaticResource Keep}" />
-                                    </Border>
-                                </StackPanel>
-                            </StackPanel>
-                        </Border>
+                    </GridView>
 
-                        <Border Width="166" Height="180" CornerRadius="6" Background="{StaticResource Card}"
-                                BorderThickness="1.5" BorderBrush="{StaticResource Danger}">
-                            <StackPanel>
-                                <Grid Height="100">
-                                    <Rectangle Fill="{StaticResource ThumbA}" Opacity="0.7" />
-                                    <Border Width="18" Height="18" CornerRadius="3" Margin="6"
-                                            Background="{StaticResource Danger}"
-                                            HorizontalAlignment="Left" VerticalAlignment="Top">
-                                        <FontIcon Glyph="&#xE73E;" FontFamily="Segoe Fluent Icons"
-                                                  FontSize="12" Foreground="{StaticResource OnDanger}" />
-                                    </Border>
-                                </Grid>
-                                <StackPanel Padding="10,8,10,10" Spacing="4">
-                                    <TextBlock Text="IMG_2034 (1).jpg" FontSize="12" TextTrimming="CharacterEllipsis"
-                                               Foreground="{StaticResource TextPrimary}" />
-                                    <TextBlock Text="4.2 MB · Jul 15, 2023" FontSize="11"
-                                               Foreground="{StaticResource TextTertiary}" />
-                                    <Border Background="{StaticResource DangerBg}" CornerRadius="3"
-                                            Padding="7,2" HorizontalAlignment="Left"
-                                            BorderThickness="1" BorderBrush="{StaticResource DangerStroke}">
-                                        <TextBlock Text="Marked for deletion" FontSize="10" FontWeight="SemiBold"
-                                                   Foreground="{StaticResource Danger}" />
-                                    </Border>
-                                </StackPanel>
-                            </StackPanel>
-                        </Border>
+                    <TextBlock Text="{x:Bind ViewModel.EmptyMessage, Mode=OneWay}"
+                               FontSize="13" HorizontalAlignment="Center" VerticalAlignment="Center"
+                               Foreground="{StaticResource TextTertiary}"
+                               Visibility="{Binding ShowEmpty, Converter={StaticResource BoolToVisibility}}" />
 
-                        <Border Width="166" Height="180" CornerRadius="6" Background="{StaticResource Card}"
-                                BorderThickness="1" BorderBrush="{StaticResource Stroke}">
-                            <StackPanel>
-                                <Rectangle Height="100" Fill="{StaticResource ThumbB}" />
-                                <StackPanel Padding="10,8,10,10" Spacing="4">
-                                    <TextBlock Text="DSC_0141.jpg" FontSize="12" TextTrimming="CharacterEllipsis"
-                                               Foreground="{StaticResource TextPrimary}" />
-                                    <TextBlock Text="6.8 MB · May 2, 2022" FontSize="11"
-                                               Foreground="{StaticResource TextTertiary}" />
-                                    <Border Background="{StaticResource Hover}" CornerRadius="3"
-                                            Padding="7,2" HorizontalAlignment="Left">
-                                        <TextBlock Text="Duplicate" FontSize="10" FontWeight="SemiBold"
-                                                   Foreground="{StaticResource TextSecondary}" />
-                                    </Border>
-                                </StackPanel>
-                            </StackPanel>
-                        </Border>
-
-                        <Border Width="166" Height="180" CornerRadius="6" Background="{StaticResource Card}"
-                                BorderThickness="1" BorderBrush="{StaticResource Stroke}">
-                            <StackPanel>
-                                <Rectangle Height="100" Fill="{StaticResource ThumbD}" />
-                                <StackPanel Padding="10,8,10,10" Spacing="4">
-                                    <TextBlock Text="PXL_20230811_174233.jpg" FontSize="12" TextTrimming="CharacterEllipsis"
-                                               Foreground="{StaticResource TextPrimary}" />
-                                    <TextBlock Text="3.1 MB · Aug 11, 2023" FontSize="11"
-                                               Foreground="{StaticResource TextTertiary}" />
-                                </StackPanel>
-                            </StackPanel>
-                        </Border>
-
-                        <Border Width="166" Height="180" CornerRadius="6" Background="{StaticResource Card}"
-                                BorderThickness="1" BorderBrush="{StaticResource Stroke}">
-                            <StackPanel>
-                                <Rectangle Height="100" Fill="{StaticResource ThumbE}" />
-                                <StackPanel Padding="10,8,10,10" Spacing="4">
-                                    <TextBlock Text="20230715_183012.jpg" FontSize="12" TextTrimming="CharacterEllipsis"
-                                               Foreground="{StaticResource TextPrimary}" />
-                                    <TextBlock Text="2.9 MB · Jul 15, 2023" FontSize="11"
-                                               Foreground="{StaticResource TextTertiary}" />
-                                    <Border Background="{StaticResource AccentSoft}" CornerRadius="3"
-                                            Padding="7,2" HorizontalAlignment="Left">
-                                        <TextBlock Text="Already in archive" FontSize="10" FontWeight="SemiBold"
-                                                   Foreground="{StaticResource Accent}" />
-                                    </Border>
-                                </StackPanel>
-                            </StackPanel>
-                        </Border>
-
-                        <Border Width="166" Height="180" CornerRadius="6" Background="{StaticResource Card}"
-                                BorderThickness="1" BorderBrush="{StaticResource Stroke}">
-                            <StackPanel>
-                                <Rectangle Height="100" Fill="{StaticResource ThumbC}" />
-                                <StackPanel Padding="10,8,10,10" Spacing="4">
-                                    <TextBlock Text="IMG_2101.jpg" FontSize="12" TextTrimming="CharacterEllipsis"
-                                               Foreground="{StaticResource TextPrimary}" />
-                                    <TextBlock Text="3.8 MB · Jul 18, 2023" FontSize="11"
-                                               Foreground="{StaticResource TextTertiary}" />
-                                </StackPanel>
-                            </StackPanel>
-                        </Border>
-
-                        <Border Width="166" Height="180" CornerRadius="6" Background="{StaticResource Card}"
-                                BorderThickness="1" BorderBrush="{StaticResource Stroke}">
-                            <StackPanel>
-                                <Rectangle Height="100" Fill="{StaticResource ThumbF}" />
-                                <StackPanel Padding="10,8,10,10" Spacing="4">
-                                    <TextBlock Text="IMG_2102.jpg" FontSize="12" TextTrimming="CharacterEllipsis"
-                                               Foreground="{StaticResource TextPrimary}" />
-                                    <TextBlock Text="4.0 MB · Jul 18, 2023" FontSize="11"
-                                               Foreground="{StaticResource TextTertiary}" />
-                                </StackPanel>
-                            </StackPanel>
-                        </Border>
-
-                        <Border Width="166" Height="180" CornerRadius="6" Background="{StaticResource Card}"
-                                BorderThickness="1.5" BorderBrush="{StaticResource Danger}">
-                            <StackPanel>
-                                <Grid Height="100">
-                                    <Rectangle Fill="{StaticResource ThumbB}" Opacity="0.7" />
-                                    <Border Width="18" Height="18" CornerRadius="3" Margin="6"
-                                            Background="{StaticResource Danger}"
-                                            HorizontalAlignment="Left" VerticalAlignment="Top">
-                                        <FontIcon Glyph="&#xE73E;" FontFamily="Segoe Fluent Icons"
-                                                  FontSize="12" Foreground="{StaticResource OnDanger}" />
-                                    </Border>
-                                </Grid>
-                                <StackPanel Padding="10,8,10,10" Spacing="4">
-                                    <TextBlock Text="DSC_0198.jpg" FontSize="12" TextTrimming="CharacterEllipsis"
-                                               Foreground="{StaticResource TextPrimary}" />
-                                    <TextBlock Text="5.4 MB · May 3, 2022" FontSize="11"
-                                               Foreground="{StaticResource TextTertiary}" />
-                                    <Border Background="{StaticResource DangerBg}" CornerRadius="3"
-                                            Padding="7,2" HorizontalAlignment="Left"
-                                            BorderThickness="1" BorderBrush="{StaticResource DangerStroke}">
-                                        <TextBlock Text="Marked for deletion" FontSize="10" FontWeight="SemiBold"
-                                                   Foreground="{StaticResource Danger}" />
-                                    </Border>
-                                </StackPanel>
-                            </StackPanel>
-                        </Border>
-
-                        <Border Width="166" Height="180" CornerRadius="6" Background="{StaticResource Card}"
-                                BorderThickness="1" BorderBrush="{StaticResource Stroke}">
-                            <StackPanel>
-                                <Rectangle Height="100" Fill="{StaticResource ThumbA}" />
-                                <StackPanel Padding="10,8,10,10" Spacing="4">
-                                    <TextBlock Text="20230704_210455.jpg" FontSize="12" TextTrimming="CharacterEllipsis"
-                                               Foreground="{StaticResource TextPrimary}" />
-                                    <TextBlock Text="2.4 MB · Jul 4, 2023" FontSize="11"
-                                               Foreground="{StaticResource TextTertiary}" />
-                                    <Border Background="{StaticResource AccentSoft}" CornerRadius="3"
-                                            Padding="7,2" HorizontalAlignment="Left">
-                                        <TextBlock Text="Already in archive" FontSize="10" FontWeight="SemiBold"
-                                                   Foreground="{StaticResource Accent}" />
-                                    </Border>
-                                </StackPanel>
-                            </StackPanel>
-                        </Border>
-                </GridView>
+                    <ProgressRing IsActive="{x:Bind ViewModel.IsLoadingItems, Mode=OneWay}"
+                                  Width="28" Height="28"
+                                  HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Grid>
 
                 <Border Grid.Row="2" Height="30" Padding="16,0"
                         Background="{StaticResource Panel}"
@@ -412,7 +322,7 @@
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="24 items · 14 unique · 4 duplicates · 3 in archive · 3 marked in this folder"
+                        <TextBlock Grid.Column="0" Text="{x:Bind ViewModel.ItemsSummary, Mode=OneWay}"
                                    FontSize="11" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
                                    Margin="0,0,16,0" Foreground="{StaticResource TextSecondary}" />
                         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="14" HorizontalAlignment="Right" VerticalAlignment="Center">

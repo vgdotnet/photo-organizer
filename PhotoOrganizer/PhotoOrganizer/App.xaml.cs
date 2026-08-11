@@ -22,6 +22,8 @@ namespace PhotoOrganizer {
 
             services.AddSingleton<IFileSystemService, FileSystemService>();
 
+            services.AddSingleton<IShellService, ShellService>();
+
             services.AddTransient<MainViewModel>();
 
             return services.BuildServiceProvider();
