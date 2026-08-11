@@ -4,9 +4,13 @@ A Windows desktop app (WinUI 3 / .NET) for tidying up photos on disk: find photo
 multiple source folders, remove exact duplicates, and file everything into a single organized
 archive — without ever deleting anything on its own.
 
-> Status: early stage. The WinUI 3 application (`PhotoOrganizer`) is scaffolded and its main window
-> is a static port of the design (sample data, no behavior). The scan / dedup / organize features
-> are not implemented yet. An interactive UI prototype of the full design lives under
+> Status: in progress. The WinUI 3 application (`PhotoOrganizer`) runs and its left pane is live —
+> the destination and sources trees are bound to `MainViewModel` and browse the real file system,
+> listing ready drives and expanding folders on demand through `IFileSystemService`; source folders
+> are picked with checkboxes and the pane shows a running selection count, and both panes are
+> resizable via splitters. The right-hand thumbnail pane is still a static port of the design
+> (hardcoded sample tiles), and the scan / hash / dedup / organize features and the SQLite index are
+> not implemented yet. An interactive UI prototype of the full design lives under
 > [`Layout/`](Layout/).
 
 ## What it does
